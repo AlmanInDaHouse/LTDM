@@ -1,0 +1,13 @@
+# G-0: AMD Radeon RX 6600 (RDNA2, gfx1032), 8 GB VRAM
+model_id: meta-llama/Llama-3.2-1B   # gated on HF: accept license + HF_TOKEN. Non-gated mirror: unsloth/Llama-3.2-1B
+revision: main                       # pin to a commit SHA at first real S-H2 run
+attn_implementation: sdpa            # flash-attn excluded (AMD / G-0)
+dtype_by_backend:
+  rocm: float16
+  cuda: float16
+  cpu: float32                       # fp16 on CPU is slow/poorly supported; fp32 is the clean fallback
+device: auto                         # resolved by ltdm.device.get_device()
+backend_expected: rocm               # gate G-0b target; cpu fallback documented in README
+rocm_env:
+  HSA_OVERRIDE_GFX_VERSION: "10.3.0" # gfx1032 -> gfx1030 (RDNA2 community-standard)
+max_new_tokens: 256

@@ -1,0 +1,34 @@
+[project]
+name = "ltdm"
+version = "0.1.0"
+description = "Latent Trajectory Divergence Monitoring - extraction harness (SPEC-LTDM-001)"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+dependencies = [
+  "torch>=2.4",
+  "transformers>=4.46",
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "pyarrow>=15",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "gpu: requires a real accelerator or the real 1B model; excluded in CI (run with -m gpu)",
+]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
