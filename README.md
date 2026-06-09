@@ -5,9 +5,8 @@ Status: **S-H1 RED** - all Acceptance Criteria committed failing for the right r
 
 ## Known CI debt (house rule: declared here, deleted in the closing SHA)
 
-| Debt | Declared | Cleared by |
-|---|---|---|
-| Full AC suite RED by design (stubs raise NotImplementedError) | S-H1 (this commit) | S-H2 GREEN commit |
+None — S-H2 closed with zero known debt. (The S-H1 "AC suite RED by design" row
+was cleared in this closing SHA.)
 
 ## Install (backend matrix - G-0: AMD RX 6600, 8 GB)
 

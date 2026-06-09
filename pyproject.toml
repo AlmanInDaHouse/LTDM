@@ -32,3 +32,9 @@ addopts = "-ra"
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+# AC-3/AC-6 GPU helpers use intentional `accel_sync(); t0 = ...` one-liners for
+# tight timing/setup. Test file is frozen (S-H1); scope the ignore to it alone so
+# future tests still enter with full lint.
+"tests/test_extraction.py" = ["E702"]

@@ -245,3 +245,23 @@ plus `runs.parquet` (run-level: gen_len, wall_ms, tok_s, monitor_overhead_pct, t
 ## 7. Deferred (explicitly out of v0.1)
 
 ICR-JSD channel (needs attention-logit capture — memory toggle, S-H4+), batch>1, diagonal-Mahalanobis variant of d_basin, steering injection (Phase E), second reference trajectory (greedy-decode reference; pre-registered as analysis variant, computed offline from persisted runs — no harness change needed).
+
+---
+
+## 8. Amendments (ratified at the S-H2 gate, 2026-06-10)
+
+Binding. Where noted, they supersede the conflicting reference snippets in §2.
+
+- **A1 — Pre-tokenized runner.** `run_traced_generation(model, inputs, mon, ...)` takes a pre-tokenized dict (`input_ids`, optional `attention_mask`); `trace_prompt(model, tok, prompt, mon, ...)` is the tokenizing wrapper. Rationale: hermetic CI — the tiny test model is built from `LlamaConfig` (no hub, no tokenizer, no network). `pad_token_id` is left to `model.generation_config`.
+
+- **A2 — Per-backend dtype.** `rocm/cuda → float16`, `cpu → float32` (README install matrix). §6's blanket fp16 holds for the accelerator path only.
+
+- **A3 — Final slot is post-norm (instrument convention).** HF `output_hidden_states[L]` is the state **after** `model.norm` (final RMSNorm), not the raw last decoder-layer output. The §2.1 reference snippet, which hooks only `base.layers`, would fail AC-2 at layer L−1 (verified empirically: `torch.equal` False, `maxabsdiff = 2.255` on the tiny Llama). Resolution: slots 0..L−2 are sourced from the decoder layers, slot L−1 from `base.norm`. This is the only choice that keeps the instrument identical to the reference — `build_mu` also constructs μ[L−1] from `hidden_states[L]` (post-norm), so live measurement and reference live in the same space.
+
+  **Analysis note (BINDING — carries to `preregistration.md` at S-H4):** slot L−1 lives in normalized space while slots 0..L−2 are raw residual stream, so κ[L−2] = d[L−1]/d[L−2] crosses two geometries of different scale. Not a defect (same instrument convention as the Basins/HF literature), but Phase E's primary analysis must treat the final layer and κ[L−2] as a **separate regime** — or exclude them with a sensitivity analysis. Pre-registered, not discovered post-hoc in the pilot.
+
+- **A4 — Step-buffer dtype follows model params.** `_step_buf`/`_raw` use `next(model.parameters()).dtype` (fp16 on GPU → SPEC's <2 MB budget preserved; fp32 on the hermetic CI model → AC-2 `torch.equal` holds). The fp32 upcast inside `_flush_step` remains the numerical source of truth.
+
+### §5 clarification (BINDING) — null is a value, not an absence
+
+Every row carries every `REQUIRED_META` column. `condition_lambda` is `null` in v0.1, but the caller passes `condition_lambda=None` **explicitly**; `write_run` raises on a missing key (`meta[k]`) rather than materializing a phantom null. A key omitted at write-time must fail loudly, not surface three weeks later as a null that silently contaminates analysis.
