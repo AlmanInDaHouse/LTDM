@@ -39,3 +39,23 @@ def synthetic_ref_tensors(tiny_model):
     a = torch.zeros(L, d, dtype=torch.float32)
     a[:, 0] = 1.0
     return mu, a
+
+
+def pytest_collection_modifyitems(config, items):
+    """S-H3 (engineering-notes #2): on CPU, test_AC3_no_vram_leak is vacuous --
+    accel_mem_allocated() returns 0, so the leak assertion is 0 < 50 MB and proves nothing.
+    Skip it with an explicit reason so the harness enforces the rule, not the operator's memory.
+
+    Scoped to that ONE test by exact name: test_AC3_overhead_budget still runs on CPU as
+    PRELIMINARY wall-clock evidence (it is sub-stressed, not vacuous -- #2 wants that number
+    recorded, not silenced). On ROCm/CUDA both run fully, matching SPEC §4's GPU scope for AC-3.
+    """
+    from ltdm.device import backend
+    if backend() != "cpu":
+        return
+    skip_cpu = pytest.mark.skip(
+        reason="vacuous on CPU: accel_mem_allocated()=0 -- leak assertion proves nothing "
+               "(engineering-notes #2)")
+    for item in items:
+        if item.name == "test_AC3_no_vram_leak":
+            item.add_marker(skip_cpu)

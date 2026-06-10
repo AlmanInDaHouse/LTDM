@@ -42,6 +42,12 @@ hook dispatch weigh less in relative terms). Verified before the first datum exi
 **Rule:** a metric that is structurally inert on a backend is logged as inert in `results/ac/`,
 never as green-with-meaning; preliminary CPU numbers are re-run on ROCm if Track A passes.
 
+**Enforced in harness (S-H3):** `tests/conftest.py::pytest_collection_modifyitems` skips
+`test_AC3_no_vram_leak` when `backend()=="cpu"` (the leak assertion is vacuous there).
+`test_AC3_overhead_budget` still runs on CPU — preliminary, not vacuous. Both run fully on
+ROCm/CUDA. Doctrine and code now point at each other (as with #3): the discipline is imposed
+by the harness, not the operator's memory.
+
 ## 2026-06-10 — An unverified data fixture is broken by construction (S-H3)
 
 S-H1's `uninformative.txt` shipped with literal `\n` instead of newlines: a chain `&&` died at
@@ -66,3 +72,13 @@ with Describe; the descriptive arm silently swapped the subject. Each would have
 surface saturation (no single token in >25% of one side), structural parity across arms (matched
 opening-verb distribution on both sides), subject preservation. Encode them in the validator:
 what the validator does not check is not checked (the recurring law of this project).
+
+## 2026-06-10 — Runbook steps are claims about the harness (S-H3, lesson #6)
+
+A runbook step (`pytest -m gpu -k AC4`) is a *claim* about how the harness behaves. This gate's
+claim — "`-m gpu` deselects on CPU, giving 0 selected" — was wrong (the marker *selects*; verified
+`1/14 collected` via `--collect-only`), and it entered a runbook without passing through the harness.
+
+**Rule:** verify runbook steps with `--collect-only` / a dry-run before encoding them, whoever they
+come from — including the architect (this is the third time verify-before-execute corrected an
+upstream claim: A3, the S-H1 fixture, this). Same family as #5 and "nothing is ratified from memory".
