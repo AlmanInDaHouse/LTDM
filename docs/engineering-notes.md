@@ -20,3 +20,36 @@ The close of A3 on the *reference* side — μ[L−1] built from `hs[L]` post-no
 identical to the slot the monitor captures via `base.norm` — is what turns the
 finding from a patch into a coherent convention: an instrument with both ends in
 the same space.
+
+## 2026-06-10 — References are backend-bound (S-H3, SPEC amendment A5)
+
+`mu` built in CPU-fp32 and measured against ROCm-fp16 mixes numerical regimes — the same
+class of bug as measuring a pre-norm state against a post-norm reference (A3), only subtler.
+
+**Rule:** `mu` and `a_dir` are rebuilt per backend (cheap — minutes); their artifacts carry
+`backend+dtype` in the filename and embedded metadata, and `ReferenceBank.load` validates that
+metadata against the caller's expected `(model_id, revision, backend, dtype)` and raises on any
+mismatch. The naming is the label; the load signature is the lock. Both ends of the instrument
+in the same space — now numerically too.
+
+## 2026-06-10 — Honest CPU evidence accounting (S-H3)
+
+On CPU `accel_mem_allocated()` returns 0, so AC-3's no-VRAM-leak assertion passes **vacuously** —
+it proves nothing. AC-3 overhead on CPU also under-stresses the 10% budget (a slow forward makes
+hook dispatch weigh less in relative terms). Verified before the first datum existed:
+`check_device.py` on CPU reported `mem_allocated=0.0 MiB`.
+
+**Rule:** a metric that is structurally inert on a backend is logged as inert in `results/ac/`,
+never as green-with-meaning; preliminary CPU numbers are re-run on ROCm if Track A passes.
+
+## 2026-06-10 — An unverified data fixture is broken by construction (S-H3)
+
+S-H1's `uninformative.txt` shipped with literal `\n` instead of newlines: a chain `&&` died at
+the `tomllib` check just before the heredoc, so the file was never rewritten, while the two jsonl
+that followed a plain newline did run. No CI test read it, so nothing caught it.
+
+**Rule:** a data fixture no CI test reads is unverified by construction — generate it by script
+AND guard it with a test, ideally both. **Corollary (structural):** a file does not self-generate
+by reading itself — the seed list (`uninformative.seed.txt`, versioned input) is separate from the
+generated output (`uninformative.txt`). The additive `test_data_integrity.py` caught this very bug
+red *before its own first commit* — the lesson working in real time.

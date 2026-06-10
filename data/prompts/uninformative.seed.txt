@@ -1,0 +1,39 @@
+# Curated seed list of uninformative single-token contexts (input, versioned).
+# build_uninformative.py unions this with a deterministic vocab sample -> uninformative.txt.
+# Keep additions single common alphanumeric tokens (Basins-style: 'The', 'Hello', empty-ish).
+The
+A
+An
+It
+Is
+Hello
+Hi
+Yes
+No
+Okay
+Well
+So
+And
+But
+Or
+If
+Then
+Now
+Here
+There
+This
+That
+These
+Those
+One
+Two
+On
+In
+At
+To
+Of
+For
+With
+As
+By
+From
