@@ -262,6 +262,8 @@ Binding. Where noted, they supersede the conflicting reference snippets in §2.
 
 - **A4 — Step-buffer dtype follows model params.** `_step_buf`/`_raw` use `next(model.parameters()).dtype` (fp16 on GPU → SPEC's <2 MB budget preserved; fp32 on the hermetic CI model → AC-2 `torch.equal` holds). The fp32 upcast inside `_flush_step` remains the numerical source of truth.
 
+- **A5 — References are backend-bound.** `mu` and `a_dir` are numerical instruments: built and measured in the same `backend+dtype` regime, never mixed (CPU-fp32 `mu` vs ROCm-fp16 measurement is an instrument-level confound, A3's class). ReferenceBank artifacts are named `refs_{backend}_{dtype}.npz` and carry `{backend, dtype, model_id, model_revision, n_contexts, seed, a_dir_source}` embedded. `load(path, device, *, model_id, model_revision, backend, dtype)` validates every field against the embedded metadata and raises on mismatch (no null-is-value: strict, like `meta[k]`); loads with `allow_pickle=False`, metadata as a serialized JSON string in a numpy U-array (no pickle surface, no new dependency). `a_dir_source` records provenance (`"inert_e0"` today, `"contrast_v1@<sha>"` once built). The naming is the label; the load signature is the lock. *(Code lands with mu construction, not before — S-H3 declares the rule, S-H3/4 implements `save/load`.)*
+
 ### §5 clarification (BINDING) — null is a value, not an absence
 
 Every row carries every `REQUIRED_META` column. `condition_lambda` is `null` in v0.1, but the caller passes `condition_lambda=None` **explicitly**; `write_run` raises on a missing key (`meta[k]`) rather than materializing a phantom null. A key omitted at write-time must fail loudly, not surface three weeks later as a null that silently contaminates analysis.
