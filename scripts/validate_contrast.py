@@ -16,9 +16,17 @@ import re
 from random import Random
 
 NEGATORS = {"not", "without", "no", "never", "none", "nor"}
+# Routine-affirming surface lexicon. Rule 3b: no single marker may saturate the negated
+# side, or a_dir partly encodes that word instead of creative-vs-routine (H1, S-H3 gate).
+ROUTINE_MARKERS = {
+    "ordinary", "routine", "usual", "standard", "plain", "conventional", "typical",
+    "unremarkable", "everyday", "customary", "predictable", "scheduled", "quiet",
+    "commonplace", "regular", "uneventful", "normal", "normally", "fixed",
+}
 PARITY = 1.25          # longer / shorter must be <= this
 MIN_PAIRS = 100
 MAX_NEGATORS = 2
+SATURATION = 0.25      # rule 3b: no single routine marker in > this fraction of negated
 
 
 def words(s: str) -> list[str]:
@@ -42,6 +50,8 @@ def main() -> int:
 
     pairs, errors = [], []
     seen_ids, seen_creative, seen_negated = set(), set(), set()
+    marker_counts = {m: 0 for m in ROUTINE_MARKERS}
+    covered = 0
     for i, ln in enumerate(lines, 1):
         try:
             obj = json.loads(ln)
@@ -58,7 +68,9 @@ def main() -> int:
             errors.append(f"{pid}: duplicate creative string")
         if neg in seen_negated:
             errors.append(f"{pid}: duplicate negated string")
-        seen_ids.add(pid); seen_creative.add(cre); seen_negated.add(neg)
+        seen_ids.add(pid)
+        seen_creative.add(cre)
+        seen_negated.add(neg)
 
         wc, wn = len(words(cre)), len(words(neg))
         ratio = max(wc, wn) / max(1, min(wc, wn))
@@ -67,7 +79,16 @@ def main() -> int:
         nc = negator_count(neg)
         if nc > MAX_NEGATORS:
             errors.append(f"{pid}: {nc} explicit negators in negated > {MAX_NEGATORS}")
+        present = {t for t in re.findall(r"[a-z']+", neg.lower())} & ROUTINE_MARKERS
+        for m in present:
+            marker_counts[m] += 1
+        covered += bool(present)
         pairs.append((pid, cre, neg, wc, wn, nc))
+
+    n = len(pairs)
+    for m, cnt in marker_counts.items():
+        if n and cnt / n > SATURATION:
+            errors.append(f"marker '{m}' in {cnt}/{n} negated ({cnt/n:.0%}) > {SATURATION:.0%} (rule 3b)")
 
     if len(pairs) < MIN_PAIRS:
         errors.append(f"only {len(pairs)} pairs < required {MIN_PAIRS}")
@@ -79,6 +100,12 @@ def main() -> int:
     if ratios:
         print(f"length parity    : max ratio {max(ratios):.2f} (limit {PARITY})")
     print(f"max negators/neg : {max((p[5] for p in pairs), default=0)} (limit {MAX_NEGATORS})")
+    if n:
+        top = sorted(((c, m) for m, c in marker_counts.items() if c), reverse=True)
+        peak = f"{top[0][1]} {top[0][0]}/{n} ({top[0][0]/n:.0%})" if top else "none"
+        print(f"routine coverage : {covered}/{n} negated ({covered/n:.0%}) carry a marker")
+        print(f"marker peak      : {peak} (rule 3b limit {SATURATION:.0%})")
+        print("marker dist      : " + ", ".join(f"{m}={c}" for c, m in top))
     print(f"errors           : {len(errors)}")
     for e in errors:
         print(f"  - {e}")

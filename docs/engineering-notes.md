@@ -53,3 +53,16 @@ AND guard it with a test, ideally both. **Corollary (structural):** a file does 
 by reading itself — the seed list (`uninformative.seed.txt`, versioned input) is separate from the
 generated output (`uninformative.txt`). The additive `test_data_integrity.py` caught this very bug
 red *before its own first commit* — the lesson working in real time.
+
+## 2026-06-10 — A per-item validator misses distributional confounds (S-H3, lesson #5)
+
+The S-H3 contrast set passed a green per-pair validator (parity, negator cap) yet carried three
+dataset-level confounds invisible to per-item checks: one routine word ("ordinary") saturated ~67%
+of the negated side; the ideation arm opened every creative with Imagine/Design and every negated
+with Describe; the descriptive arm silently swapped the subject. Each would have leaked into
+`a_dir = mean(creative) − mean(negated)`. A per-pair pass cannot see any of them — by construction.
+
+**Rule:** any dataset that defines a *direction* needs distribution checks on top of per-item ones —
+surface saturation (no single token in >25% of one side), structural parity across arms (matched
+opening-verb distribution on both sides), subject preservation. Encode them in the validator:
+what the validator does not check is not checked (the recurring law of this project).
